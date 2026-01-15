@@ -182,7 +182,7 @@ async function removeAdminLogic(ctx, username) {
 
 
 async function listUsersHandler(ctx) {
-    if (!await isAdmin(ctx)) return;
+    if (!await isAdmin(ctx)) return ctx.reply('⛔️ У тебе немає прав адміністратора.');
     const users = await getAllUsers();
     if (users.length === 0) return ctx.reply('No users.', getManageUsersKeyboard());
     
@@ -191,7 +191,7 @@ async function listUsersHandler(ctx) {
 }
 
 async function listAdminsHandler(ctx) {
-    if (!await isAdmin(ctx)) return;
+    if (!await isAdmin(ctx)) return ctx.reply('⛔️ У тебе немає прав адміністратора.');
     const users = await getAllUsers();
     const adminUsers = users.filter(u => u.is_admin === 1);
     
@@ -203,7 +203,7 @@ async function listAdminsHandler(ctx) {
 }
 
 async function statusHandler(ctx) {
-    if (!await isAdmin(ctx)) return;
+    if (!await isAdmin(ctx)) return ctx.reply('⛔️ У тебе немає прав адміністратора.');
     
     const { week, year } = getCurrentWeekAndYear();
     const dateRange = getWeekDateRange(week, year);
@@ -258,7 +258,7 @@ async function sendBroadcastLogic(ctx, text) {
 module.exports = (bot) => {
     // --- BASIC ADMIN COMMANDS ---
     bot.command('add', async (ctx) => {
-        if (!await isAdmin(ctx)) return;
+        if (!await isAdmin(ctx)) return ctx.reply('⛔️ У тебе немає прав адміністратора.');
 
         const args = ctx.message.text.split(' ');
         if (args.length < 2) return ctx.reply('Usage: /add @username <Full Name (optional)>');
@@ -270,14 +270,14 @@ module.exports = (bot) => {
     });
 
     bot.command('remove', async (ctx) => {
-        if (!await isAdmin(ctx)) return;
+        if (!await isAdmin(ctx)) return ctx.reply('⛔️ У тебе немає прав адміністратора.');
         const args = ctx.message.text.split(' ');
         if (args.length < 2) return ctx.reply('Usage: /remove @username');
         await removeUserLogic(ctx, args[1]);
     });
 
     bot.command('mute', async (ctx) => {
-        if (!await isAdmin(ctx)) return;
+        if (!await isAdmin(ctx)) return ctx.reply('⛔️ У тебе немає прав адміністратора.');
         const args = ctx.message.text.split(' ');
         if (args.length < 2) return ctx.reply('Usage: /mute @username');
         
@@ -288,7 +288,7 @@ module.exports = (bot) => {
     });
 
     bot.command('unmute', async (ctx) => {
-        if (!await isAdmin(ctx)) return;
+        if (!await isAdmin(ctx)) return ctx.reply('⛔️ У тебе немає прав адміністратора.');
         const args = ctx.message.text.split(' ');
         if (args.length < 2) return ctx.reply('Usage: /unmute @username');
         
@@ -331,23 +331,23 @@ module.exports = (bot) => {
 
     // --- MENU HANDLERS ---
     async function manageUsersHandler(ctx) {
-        if (!await isAdmin(ctx)) return;
+        if (!await isAdmin(ctx)) return ctx.reply('⛔️ У тебе немає прав адміністратора.');
         ctx.reply('Керування користувачами:', getManageUsersKeyboard());
     }
 
     async function manageAdminsHandler(ctx) {
-        if (!await isAdmin(ctx)) return;
+        if (!await isAdmin(ctx)) return ctx.reply('⛔️ У тебе немає прав адміністратора.');
         ctx.reply('Керування адмінами:', getManageAdminsKeyboard());
     }
 
     async function settingsHandler(ctx) {
-        if (!await isAdmin(ctx)) return;
+        if (!await isAdmin(ctx)) return ctx.reply('⛔️ У тебе немає прав адміністратора.');
         ctx.reply('Налаштування:', getSettingsKeyboard());
     }
 
     async function adminsHandler(ctx) {
         // This handler might be obsolete if we use manageAdminsHandler, but keeping it for safety or redirect
-        if (!await isAdmin(ctx)) return;
+        if (!await isAdmin(ctx)) return ctx.reply('⛔️ У тебе немає прав адміністратора.');
         const users = await getAllUsers();
         // Filter those who are admins in DB (note: config.ADMIN_ID might not be in DB with is_admin=1 initially, but effectively is admin)
         // Let's just list from DB where is_admin=1
@@ -361,7 +361,7 @@ module.exports = (bot) => {
     }
 
     async function remindersHandler(ctx) {
-        if (!await isAdmin(ctx)) return;
+        if (!await isAdmin(ctx)) return ctx.reply('⛔️ У тебе немає прав адміністратора.');
         const settings = await getAllSettings();
         ctx.reply('Обери нагадування, щоб змінити час:', getRemindersKeyboard(settings));
     }
@@ -474,14 +474,14 @@ module.exports = (bot) => {
     }
 
     bot.command('makeadmin', async (ctx) => {
-        if (!await isAdmin(ctx)) return;
+        if (!await isAdmin(ctx)) return ctx.reply('⛔️ У тебе немає прав адміністратора.');
         const args = ctx.message.text.split(' ');
         if (args.length < 2) return ctx.reply('Usage: /makeadmin @username');
         await addAdminLogic(ctx, args[1]);
     });
 
     bot.command('demoteadmin', async (ctx) => {
-        if (!await isAdmin(ctx)) return;
+        if (!await isAdmin(ctx)) return ctx.reply('⛔️ У тебе немає прав адміністратора.');
         const args = ctx.message.text.split(' ');
         const username = args[1]; // Corrected index from previous potentially risky code
         if (!username) return ctx.reply('Usage: /demoteadmin @username');
@@ -489,7 +489,7 @@ module.exports = (bot) => {
     });
 
     bot.command('resetreport', async (ctx) => {
-        if (!await isAdmin(ctx)) return;
+        if (!await isAdmin(ctx)) return ctx.reply('⛔️ У тебе немає прав адміністратора.');
         const args = ctx.message.text.split(' ');
         const username = args[1];
         if (!username) return ctx.reply('Usage: /resetreport @username');
@@ -512,7 +512,7 @@ module.exports = (bot) => {
     });
 
     bot.command('setreminder', async (ctx) => {
-        if (!await isAdmin(ctx)) return;
+        if (!await isAdmin(ctx)) return ctx.reply('⛔️ У тебе немає прав адміністратора.');
         const args = ctx.message.text.split(' ');
         // /setreminder 1 0 13 * * 5
         if (args.length < 3) return ctx.reply('Usage: /setreminder <1-4> <cron_expression>');

@@ -29,8 +29,48 @@ bot.use(async (ctx, next) => {
     return next();
 });
 
+// GLOBAL AUTH MIDDLEWARE
+// Intercepts ALL commands/messages before they reach specific handlers
+bot.use(async (ctx, next) => {
+    // Skip if not a message/callback (e.g. valid updates only)
+    if (!ctx.from) return next();
+
+    const userId = ctx.from.id.toString();
+    const { ADMIN_ID } = require('./config');
+    
+    // Always allow Super Admin
+    if (userId === ADMIN_ID) return next();
+
+    // Check if user exists in DB
+    const user = await getUserByTelegramId(userId); // We might cache this later if needed
+
+    // If user is NOT in DB
+    if (!user) {
+        // Allow /start to register/see welcome
+        if (ctx.message && ctx.message.text && ctx.message.text.startsWith('/start')) {
+            return next();
+        }
+        
+        // Block everything else
+        const replyText = '⛔️ Твій доступ до бота обмежено. Звернись до адміністратора, щоб тебе додали до списку.';
+        
+        // If it's a callback query (button click) from a lingering menu
+        if (ctx.callbackQuery) {
+            return ctx.answerCbQuery(replyText, { show_alert: true });
+        }
+        
+        // Remove keyboard if they have one and warn
+        return ctx.reply(replyText, Markup.removeKeyboard());
+    }
+
+    // Attach user to context for optimization downstream (optional but good practice)
+    ctx.user = user;
+    
+    return next();
+});
+
 // Register commands and get handlers
-const { 
+const {  
     listUsersHandler, 
     statusHandler, 
     settingsHandler, 
