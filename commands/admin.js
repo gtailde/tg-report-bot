@@ -59,8 +59,8 @@ function getRemindersKeyboard(settings) {
     };
 
     return Markup.keyboard([
-        [parseCron(settings.reminder_friday_1, '1', 'Нагадування'), parseCron(settings.reminder_friday_2, '2', 'Дедлайн')],
-        [parseCron(settings.reminder_saturday, '3', 'Спізнення'), parseCron(settings.reminder_sunday, '4', 'Фінал')],
+        [parseCron(settings.reminder_standard, '1', 'Нагадування'), parseCron(settings.reminder_deadline, '2', 'Дедлайн')],
+        [parseCron(settings.reminder_late, '3', 'Спізнення'), parseCron(settings.reminder_final, '4', 'Фінал')],
         ['🔙 Назад']
     ]).resize();
 }
@@ -418,10 +418,10 @@ module.exports = (bot) => {
         if (args.length < 3) return ctx.reply('Usage: /setreminder <1-4> <cron_expression>');
         
         const keyMap = {
-            '1': 'reminder_friday_1',
-            '2': 'reminder_friday_2',
-            '3': 'reminder_saturday',
-            '4': 'reminder_sunday'
+            '1': 'reminder_standard',
+            '2': 'reminder_deadline',
+            '3': 'reminder_late',
+            '4': 'reminder_final'
         };
         
         const key = keyMap[args[1]];

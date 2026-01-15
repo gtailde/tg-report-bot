@@ -2,10 +2,10 @@ const { getDB } = require('./db');
 
 // Default settings
 const DEFAULTS = {
-    'reminder_friday_1': '0 12 * * 5',
-    'reminder_friday_2': '0 17 * * 5',
-    'reminder_saturday': '0 10 * * 6',
-    'reminder_sunday': '0 10 * * 0'
+    'reminder_standard': '0 12 * * 5',
+    'reminder_deadline': '0 17 * * 5',
+    'reminder_late': '0 10 * * 6',
+    'reminder_final': '0 10 * * 0'
 };
 
 async function getSetting(key) {

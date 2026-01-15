@@ -310,10 +310,10 @@ bot.on(['text', 'document', 'photo'], async (ctx, next) => {
         if (reminderMatch) {
             const id = reminderMatch[1];
             const keyMap = {
-                '1': 'reminder_friday_1',
-                '2': 'reminder_friday_2',
-                '3': 'reminder_saturday',
-                '4': 'reminder_sunday'
+                '1': 'reminder_standard',
+                '2': 'reminder_deadline',
+                '3': 'reminder_late',
+                '4': 'reminder_final'
             };
             const key = keyMap[id];
             

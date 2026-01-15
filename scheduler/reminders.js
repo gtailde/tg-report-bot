@@ -58,26 +58,26 @@ async function initScheduler(bot) {
     };
 
     // Friday 12:00 - General Reminder (Now strictly for those who haven't sent yet)
-    schedule(settings.reminder_friday_1, async () => {
-        const deadlineTime = getTimeFromCron(settings.reminder_friday_2);
+    schedule(settings.reminder_standard, async () => {
+        const deadlineTime = getTimeFromCron(settings.reminder_deadline);
         // Also check missing like others to avoid duplicate/spam if already sent
         await remindMissing(bot, `🔔 Привіт! Не забудь скинути тижневий звіт до ${deadlineTime}.`);
     });
 
     // Friday 17:00 - Missing Report Reminder
-    schedule(settings.reminder_friday_2, async () => {
-        const timeNow = getTimeFromCron(settings.reminder_friday_2);
+    schedule(settings.reminder_deadline, async () => {
+        const timeNow = getTimeFromCron(settings.reminder_deadline);
         await remindMissing(bot, `⚠️ Ти ще не скинув звіт! Вже ${timeNow}.`);
     });
 
     // Saturday 10:00
-    schedule(settings.reminder_saturday, async () => {
-        const deadlineDay = getDayNameFromCron(settings.reminder_friday_2);
+    schedule(settings.reminder_late, async () => {
+        const deadlineDay = getDayNameFromCron(settings.reminder_deadline);
         await remindMissing(bot, `⚠️ Ти пропустив дедлайн у ${deadlineDay}. Скинь звіт якнайшвидше!`);
     });
 
     // Sunday 10:00
-    schedule(settings.reminder_sunday, async () => {
+    schedule(settings.reminder_final, async () => {
         await remindMissing(bot, '⚠️ Останній шанс скинути звіт за цей тиждень!');
     });
 }
