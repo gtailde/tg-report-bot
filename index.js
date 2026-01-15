@@ -92,7 +92,8 @@ const {
     updateReminderDay,
     sendBroadcastLogic,
     scheduleBroadcast,
-    helpHandler
+    helpHandler,
+    getMainMenuKeyboard
 } = adminCommands(bot);
 const { getAllSettings } = require('./db/settings');
 
@@ -118,11 +119,7 @@ bot.start(async (ctx) => {
          }
     }
 // Custom Keyboard
-    let buttons = [['📝 Здати звіт']];
-    if (isUserAdmin) {
-        buttons = [['📝 Здати звіт'], ['👥 Користувачі', '📊 Статус'], ['⚙️ Налаштування']];
-    }
-    const keyboard = Markup.keyboard(buttons).resize();
+    const keyboard = getMainMenuKeyboard(isUserAdmin);
 
     if (user) {
         ctx.reply(`👋 Привіт, ${user.full_name || ctx.from.first_name}!
@@ -165,9 +162,7 @@ bot.on(['text', 'document', 'photo'], async (ctx, next) => {
     if (userStates[userId] === 'WAITING_FOR_REPORT') {
         if (text === '🚫 Скасувати') {
              userStates[userId] = null;
-             let buttons = [['📝 Здати звіт']];
-             if (isUserAdmin) buttons = [['📝 Здати звіт'], ['👥 Користувачі', '📊 Статус'], ['⚙️ Налаштування']];
-             return ctx.reply('Відправку звіту скасовано.', Markup.keyboard(buttons).resize());
+             return ctx.reply('Відправку звіту скасовано.', getMainMenuKeyboard(isUserAdmin));
         }
 
         if (text && text.startsWith('/')) {
@@ -178,9 +173,7 @@ bot.on(['text', 'document', 'photo'], async (ctx, next) => {
         await handleReportSubmission(ctx);
         userStates[userId] = null; 
         
-        let buttons = [['📝 Здати звіт']];
-        if (isUserAdmin) buttons = [['📝 Здати звіт'], ['👥 Користувачі', '📊 Статус'], ['⚙️ Налаштування']];
-        return ctx.reply('Що робимо далі?', Markup.keyboard(buttons).resize());
+        return ctx.reply('Що робимо далі?', getMainMenuKeyboard(isUserAdmin));
     }
 
     if (userStates[userId] === 'WAITING_FOR_USER_ADD') {
@@ -421,16 +414,8 @@ bot.on(['text', 'document', 'photo'], async (ctx, next) => {
 
         // Common Back
         if (text === '🔙 Назад') {
-             // We don't know exactly where we came from, but usually Back goes to Main Menu from Settings or Users
-             // Let's reset to Main Menu
             userStates[userId] = null;
-            let buttons = [['📝 Здати звіт']];
-            if (isUserAdmin) {
-                 buttons = [['📝 Здати звіт', '❓ Допомога'], ['👥 Користувачі', '📊 Статус'], ['⚙️ Налаштування']];
-            }
-            // If we are in sub menus, maybe we want to go up one level? 
-            // But since we don't track depth, Main Menu is safest.
-            return ctx.reply('Головне меню', Markup.keyboard(buttons).resize());
+            return ctx.reply('Головне меню', getMainMenuKeyboard(isUserAdmin));
         }
     }
 

@@ -613,7 +613,8 @@ module.exports = (bot) => {
         updateReminderTime,
         updateReminderDay,
         sendBroadcastLogic,
-        scheduleBroadcast
+        scheduleBroadcast,
+        getMainMenuKeyboard
     };
 };
 
