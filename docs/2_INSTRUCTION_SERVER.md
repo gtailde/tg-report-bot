@@ -44,7 +44,7 @@
 2.  **Клонуємо:**
     *(Замініть посилання на ваше!)*
     ```bash
-    git clone https://github.com/ВАШ_НІК/НАЗВА_РЕПОЗИТОРІЮ.git .
+    git clone https://github.com/gtailde/tg-report-bot.git .
     ```
 
 3.  **Встановлюємо залежності:**
