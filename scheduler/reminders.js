@@ -14,25 +14,43 @@ async function initScheduler(bot) {
     const timezone = "Europe/Kiev";
     const settings = await getAllSettings();
 
+    // Helper to get HH:MM from cron
+    const getTimeFromCron = (cronExpr) => {
+        if (!cronExpr) return '??:??';
+        const parts = cronExpr.split(' ');
+        let h, m;
+        // 5 parts: min hour ... | 6 parts: sec min hour ...
+        if (parts.length === 5) {
+            m = parts[0];
+            h = parts[1];
+        } else {
+            m = parts[1];
+            h = parts[2];
+        }
+        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    };
+
     // Helper to schedule
     const schedule = (cronTime, taskFn) => {
         if (cron.validate(cronTime)) {
-            const task = cron.schedule(cronTime, taskFn, { timezone });
-            tasks.push(task);
+             const task = cron.schedule(cronTime, taskFn, { timezone });
+             tasks.push(task);
         } else {
-            console.error(`Invalid cron time: ${cronTime}`);
+             console.error(`Invalid cron time: ${cronTime}`);
         }
     };
 
     // Friday 12:00 - General Reminder (Now strictly for those who haven't sent yet)
     schedule(settings.reminder_friday_1, async () => {
+        const deadlineTime = getTimeFromCron(settings.reminder_friday_2);
         // Also check missing like others to avoid duplicate/spam if already sent
-        await remindMissing(bot, '🔔 Привіт! Не забудь скинути тижневий звіт до 17:00.');
+        await remindMissing(bot, `🔔 Привіт! Не забудь скинути тижневий звіт до ${deadlineTime}.`);
     });
 
     // Friday 17:00 - Missing Report Reminder
     schedule(settings.reminder_friday_2, async () => {
-        await remindMissing(bot, '⚠️ Ти ще не скинув звіт! Вже 17:00.');
+        const timeNow = getTimeFromCron(settings.reminder_friday_2);
+        await remindMissing(bot, `⚠️ Ти ще не скинув звіт! Вже ${timeNow}.`);
     });
 
     // Saturday 10:00
