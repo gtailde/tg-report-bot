@@ -140,16 +140,20 @@ async function removeUserLogic(ctx, username) {
     const removed = await removeUser(cleanUsername);
     
     if (removed) {
-        ctx.reply(`Користувач @${cleanUsername} успішно видалений.`);
+        // Send notification to the user
+        let notifStatus = 'але не вдалося повідомити користувача.';
         try {
-            console.log(`Sending removal notification to ${user.telegram_id}`);
-            // Explicitly constructing the object to ensure compatibility
             await ctx.telegram.sendMessage(user.telegram_id, '⛔️ Ваш доступ до бота скасовано адміністратором.', {
                 reply_markup: { remove_keyboard: true }
             });
+            notifStatus = 'та повідомлено користувача.';
         } catch (e) {
-             console.warn(`Failed to notify removed user ${cleanUsername}`, e.message);
+             console.error(`Failed to notify removed user ${cleanUsername}`, e);
+             notifStatus = `але виникла помилка при повідомленні: ${e.message}`;
         }
+        
+        ctx.reply(`Користувач @${cleanUsername} успішно видалений, ${notifStatus}`);
+
     } else {
         ctx.reply(`Помилка: користувач @${cleanUsername} не знайдений або вже видалений.`);
     }
