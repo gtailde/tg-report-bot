@@ -142,12 +142,13 @@ async function removeUserLogic(ctx, username) {
     if (removed) {
         ctx.reply(`Користувач @${cleanUsername} успішно видалений.`);
         try {
-            await ctx.telegram.sendMessage(user.telegram_id, '⛔️ Твій доступ до бота було скасовано адміністратором.', Markup.removeKeyboard());
+            console.log(`Sending removal notification to ${user.telegram_id}`);
+            await ctx.telegram.sendMessage(user.telegram_id, '⛔️ Ваш доступ до бота скасовано адміністратором.', Markup.removeKeyboard());
         } catch (e) {
              console.warn(`Failed to notify removed user ${cleanUsername}`, e.message);
         }
     } else {
-        ctx.reply(`Помилка при видаленні користувача @${cleanUsername}.`);
+        ctx.reply(`Помилка: користувач @${cleanUsername} не знайдений або вже видалений.`);
     }
 }
 
