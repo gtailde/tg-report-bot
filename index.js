@@ -91,8 +91,25 @@ bot.start(async (ctx) => {
 bot.on(['text', 'document', 'photo'], async (ctx, next) => {
     const message = ctx.message;
     const text = message.text || message.caption || ''; // Grab text/caption
-    const userId = ctx.from.id;
+    const userId = ctx.from.id.toString();
     const isUserAdmin = await isAdmin(ctx);
+
+    // Check if user is active (in users table)
+    const user = await getUserByTelegramId(userId);
+    
+    // Only allow Admins or Active Users to proceed with interactive commands/buttons
+    // Exception: /start is handled separately, but text messages like "Back" or buttons need validation
+    if (!user && !isUserAdmin) {
+        // If user tries to use buttons but is removed
+        if (!text.startsWith('/')) {
+             return ctx.reply('⛔️ Твій доступ до бота обмежено. Звернись до адміністратора.', Markup.removeKeyboard());
+        }
+        // If it's a command, let it pass? No, commands also shouldn't work if removed.
+        // But /start is a command.
+        if (text.startsWith('/start')) return next();
+        
+        return ctx.reply('⛔️ Твій доступ до бота обмежено.', Markup.removeKeyboard());
+    }
 
     // 1. STATE HANDLERS (High priority)
     if (userStates[userId] === 'WAITING_FOR_REPORT') {

@@ -18,7 +18,7 @@ async function removeUser(username) {
     const db = await getDB();
     // remove @ from username if present
     const cleanUsername = username.replace('@', '');
-    const result = await db.run('DELETE FROM users WHERE username = ?', [cleanUsername]);
+    const result = await db.run('DELETE FROM users WHERE LOWER(username) = LOWER(?)', [cleanUsername]);
     return result.changes > 0;
 }
 
@@ -35,11 +35,14 @@ async function getUserByTelegramId(telegram_id) {
 async function getUserByUsername(username) {
     const db = await getDB();
     const cleanUsername = username.replace('@', '');
-    return await db.get('SELECT * FROM users WHERE username = ?', [cleanUsername]);
+    return await db.get('SELECT * FROM users WHERE LOWER(username) = LOWER(?)', [cleanUsername]);
 }
 
 async function markSeen(telegram_id, username) {
     const db = await getDB();
+    // Use upsert or logic to ensure case insensitivity isn't an issue, but standard insert is fine.
+    // However, fast lookups should be case insensitive.
+    // For storing, we store as is (preferred case).
     await db.run(
         'INSERT OR REPLACE INTO seen_users (telegram_id, username) VALUES (?, ?)',
         [telegram_id, username.replace('@', '')]
@@ -48,7 +51,7 @@ async function markSeen(telegram_id, username) {
 
 async function getSeenUserByUsername(username) {
     const db = await getDB();
-    return await db.get('SELECT * FROM seen_users WHERE username = ?', [username.replace('@', '')]);
+    return await db.get('SELECT * FROM seen_users WHERE LOWER(username) = LOWER(?)', [username.replace('@', '')]);
 }
 
 async function setAdminStatus(telegram_id, isAdmin) {
