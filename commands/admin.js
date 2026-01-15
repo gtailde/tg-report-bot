@@ -32,30 +32,35 @@ function getManageAdminsKeyboard() {
 
 function getRemindersKeyboard(settings) {
     // Parse crons to readable buttons
-    const parseCron = (expression, defaultLabel) => {
+    const parseCron = (expression, prefix, label) => {
         // Simple parser for "Min Hour * * Day" (5 parts)
         const parts = expression.split(' ');
-        if (parts.length < 5) return defaultLabel;
+        if (parts.length < 5) return `${prefix}. ${label}`;
         
         // Check if 5 or 6 fields. 
         // 5 fields: Min Hour Day Month WeakDay
         // 6 fields: Sec Min Hour Day Month WeakDay
-        let mm, hh;
+        let mm, hh, dow;
         if (parts.length === 5) {
             mm = parts[0].padStart(2, '0');
             hh = parts[1].padStart(2, '0');
+            dow = parts[4];
         } else {
             // Assume 6
             mm = parts[1].padStart(2, '0');
             hh = parts[2].padStart(2, '0');
+            dow = parts[5];
         }
+
+        const days = ['Нд', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+        const dayName = days[parseInt(dow)] || '??';
         
-        return `${defaultLabel}: ${hh}:${mm}`;
+        return `${prefix}. ${dayName} (${label}): ${hh}:${mm}`;
     };
 
     return Markup.keyboard([
-        [parseCron(settings.reminder_friday_1, '1. Пт (Нагадування)'), parseCron(settings.reminder_friday_2, '2. Пт (Дедлайн)')],
-        [parseCron(settings.reminder_saturday, '3. Сб (Спізнення)'), parseCron(settings.reminder_sunday, '4. Нд (Фінал)')],
+        [parseCron(settings.reminder_friday_1, '1', 'Нагадування'), parseCron(settings.reminder_friday_2, '2', 'Дедлайн')],
+        [parseCron(settings.reminder_saturday, '3', 'Спізнення'), parseCron(settings.reminder_sunday, '4', 'Фінал')],
         ['🔙 Назад']
     ]).resize();
 }

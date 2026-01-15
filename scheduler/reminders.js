@@ -30,6 +30,23 @@ async function initScheduler(bot) {
         return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
     };
 
+    // Helper to get Day name (accusative) from cron
+    // 0=Sun, 1=Mon, ..., 5=Fri, 6=Sat
+    const getDayNameFromCron = (cronExpr) => {
+        if (!cronExpr) return 'день дедлайну';
+        const parts = cronExpr.split(' ');
+        let d;
+        // 5 parts: min hour dom mon dow
+        // 6 parts: sec min hour dom mon dow
+        if (parts.length === 5) {
+            d = parts[4];
+        } else {
+            d = parts[5];
+        }
+        const days = ['неділю', 'понеділок', 'вівторок', 'середу', 'четвер', 'п\'ятницю', 'суботу'];
+        return days[parseInt(d)] || 'день дедлайну';
+    };
+
     // Helper to schedule
     const schedule = (cronTime, taskFn) => {
         if (cron.validate(cronTime)) {
@@ -55,7 +72,8 @@ async function initScheduler(bot) {
 
     // Saturday 10:00
     schedule(settings.reminder_saturday, async () => {
-        await remindMissing(bot, '⚠️ Ти пропустив дедлайн у п\'ятницю. Скинь звіт якнайшвидше!');
+        const deadlineDay = getDayNameFromCron(settings.reminder_friday_2);
+        await remindMissing(bot, `⚠️ Ти пропустив дедлайн у ${deadlineDay}. Скинь звіт якнайшвидше!`);
     });
 
     // Sunday 10:00
