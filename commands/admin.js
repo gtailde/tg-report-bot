@@ -1,4 +1,4 @@
-﻿const { addUser, removeUser, getAllUsers, getSeenUserByUsername, setAdminStatus } = require('../db/users');
+﻿const { addUser, removeUser, getAllUsers, getSeenUserByUsername, getUserByUsername, setAdminStatus } = require('../db/users');
 const cron = require('node-cron');
 const { getReportsForWeek, deleteReport } = require('../db/reports');
 const { isAdmin } = require('../utils/isAdmin');
@@ -127,9 +127,13 @@ async function removeUserLogic(ctx, username) {
          return ctx.reply('⚠️ Ти не можеш видалити сам себе.');
     }
     
-    // Resolve ID to be sure
-    const user = await getSeenUserByUsername(cleanUsername);
-    if (user && user.telegram_id.toString() === ctx.from.id.toString()) {
+    // Resolve ID from ACTIVE users table
+    const user = await getUserByUsername(cleanUsername);
+    if (!user) {
+         return ctx.reply(`Користувач @${cleanUsername} не знайдений у списку активних користувачів.`);
+    }
+
+    if (user.telegram_id.toString() === ctx.from.id.toString()) {
          return ctx.reply('⚠️ Ти не можеш видалити сам себе.');
     }
 
@@ -137,15 +141,13 @@ async function removeUserLogic(ctx, username) {
     
     if (removed) {
         ctx.reply(`Користувач @${cleanUsername} успішно видалений.`);
-        if (user) {
-             try {
-                await ctx.telegram.sendMessage(user.telegram_id, '⛔️ Твій доступ до бота було скасовано адміністратором.', Markup.removeKeyboard());
-             } catch (e) {
-                 console.warn(`Failed to notify removed user ${cleanUsername}`, e.message);
-             }
+        try {
+            await ctx.telegram.sendMessage(user.telegram_id, '⛔️ Твій доступ до бота було скасовано адміністратором.', Markup.removeKeyboard());
+        } catch (e) {
+             console.warn(`Failed to notify removed user ${cleanUsername}`, e.message);
         }
     } else {
-        ctx.reply(`Користувач @${cleanUsername} не знайдений у списку.`);
+        ctx.reply(`Помилка при видаленні користувача @${cleanUsername}.`);
     }
 }
 
