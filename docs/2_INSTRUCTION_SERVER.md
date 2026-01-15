@@ -42,7 +42,6 @@
     ```
 
 2.  **Клонуємо:**
-    *(Замініть посилання на ваше!)*
     ```bash
     git clone https://github.com/gtailde/tg-report-bot.git .
     ```
