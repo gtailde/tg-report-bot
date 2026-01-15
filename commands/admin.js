@@ -124,6 +124,10 @@ async function removeAdminLogic(ctx, username) {
     const user = await getSeenUserByUsername(cleanUsername);
     if (!user) return ctx.reply('Користувач не знайдений.');
 
+    if (user.telegram_id.toString() === ctx.from.id.toString()) {
+        return ctx.reply('⚠️ Ти не можеш забрати права адміністратора у самого себе.');
+    }
+
     await setAdminStatus(user.telegram_id, false);
     ctx.reply(`Користувач @${cleanUsername} більше не адміністратор.`);
 
@@ -131,6 +135,28 @@ async function removeAdminLogic(ctx, username) {
         await ctx.telegram.sendMessage(user.telegram_id, '❌ Права адміністратора скасовано. Меню оновлено.', getMainMenuKeyboard(false));
     } catch (e) {
         console.warn('Could not notify demoted admin', e);
+    }
+}
+
+async function removeUserLogic(ctx, username) {
+    const cleanUsername = username.replace('@', '');
+    // Check if trying to remove self
+    if (username === `@${ctx.from.username}` || cleanUsername === ctx.from.username) {
+         return ctx.reply('⚠️ Ти не можеш видалити сам себе.');
+    }
+    
+    // Better check via ID if possible, but removeUser works by username.
+    // Let's resolve ID just to be sure
+    const user = await getSeenUserByUsername(cleanUsername);
+    if (user && user.telegram_id.toString() === ctx.from.id.toString()) {
+         return ctx.reply('⚠️ Ти не можеш видалити сам себе.');
+    }
+
+    const removed = await removeUser(username);
+    if (removed) {
+        ctx.reply(`Користувач @${cleanUsername} видалений.`);
+    } else {
+        ctx.reply(`Користувач @${cleanUsername} не знайдений.`);
     }
 }
 
@@ -225,8 +251,7 @@ module.exports = (bot) => {
         if (!await isAdmin(ctx)) return;
         const args = ctx.message.text.split(' ');
         if (args.length < 2) return ctx.reply('Usage: /remove @username');
-        await removeUser(args[1]);
-        ctx.reply(`User ${args[1]} removed.`);
+        await removeUserLogic(ctx, args[1]);
     });
 
     // --- MENU HANDLERS ---
@@ -501,6 +526,7 @@ module.exports = (bot) => {
         addUserLogic,
         addAdminLogic,
         removeAdminLogic,
+        removeUserLogic,
         listAdminsHandler,
         getManageUsersKeyboard,
         getManageAdminsKeyboard,

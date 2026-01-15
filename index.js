@@ -41,6 +41,7 @@ const {
     addUserLogic,
     addAdminLogic,
     removeAdminLogic,
+    removeUserLogic,
     listAdminsHandler,
     getManageUsersKeyboard,
     getRemindersKeyboard,
@@ -139,8 +140,7 @@ bot.on(['text', 'document', 'photo'], async (ctx, next) => {
              return manageUsersHandler(ctx);
         }
         const username = text.trim();
-        await removeUser(username);
-        ctx.reply(`Користувач ${username} видалений.`);
+        await removeUserLogic(ctx, username);
         userStates[userId] = null;
         return manageUsersHandler(ctx);
     }
