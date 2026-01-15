@@ -382,11 +382,11 @@ bot.on(['text', 'document', 'photo'], async (ctx, next) => {
         // Common Back
         if (text === '🔙 Назад') {
              // We don't know exactly where we came from, but usually Back goes to Main Menu from Settings or Users
-             // Let's reset to Main Menu, ['❓ Допомога']];
+             // Let's reset to Main Menu
+            userStates[userId] = null;
+            let buttons = [['📝 Здати звіт'], ['❓ Допомога']];
             if (isUserAdmin) {
-                 buttons = [['📝 Здати звіт', '❓ Допомога]];
-            if (isUserAdmin) {
-                 buttons = [['📝 Здати звіт'], ['👥 Користувачі', '📊 Статус'], ['⚙️ Налаштування']];
+                 buttons = [['📝 Здати звіт', '❓ Допомога'], ['👥 Користувачі', '📊 Статус'], ['⚙️ Налаштування']];
             }
             // If we are in sub menus, maybe we want to go up one level? 
             // But since we don't track depth, Main Menu is safest.
