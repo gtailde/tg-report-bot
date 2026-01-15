@@ -127,35 +127,43 @@ async function removeUserLogic(ctx, username) {
          return ctx.reply('⚠️ Ти не можеш видалити сам себе.');
     }
     
-    // Resolve ID from ACTIVE users table
-    const user = await getUserByUsername(cleanUsername);
+    // Resolve ID via seen_users to be more comprehensive, or users table
+    // Priority: Active Users -> Seen Users
+    let user = await getUserByUsername(cleanUsername);
     if (!user) {
-         return ctx.reply(`Користувач @${cleanUsername} не знайдений у списку активних користувачів.`);
+        user = await getSeenUserByUsername(cleanUsername);
+    }
+    
+    if (!user) {
+         return ctx.reply(`Користувач @${cleanUsername} не знайдений.`);
     }
 
     if (user.telegram_id.toString() === ctx.from.id.toString()) {
          return ctx.reply('⚠️ Ти не можеш видалити сам себе.');
     }
 
+    // Try to notify BEFORE removing to ensure object validity if anything relies on it (though we have ID)
+    let notifSuccess = false;
+    try {
+        await ctx.telegram.sendMessage(user.telegram_id, '⛔️ Ваш доступ до бота скасовано адміністратором.', {
+            reply_markup: { remove_keyboard: true }
+        });
+        notifSuccess = true;
+    } catch (e) {
+         console.error(`Failed to notify user ${cleanUsername} before removal`, e);
+    }
+
     const removed = await removeUser(cleanUsername);
     
     if (removed) {
-        // Send notification to the user
-        let notifStatus = 'але не вдалося повідомити користувача.';
-        try {
-            await ctx.telegram.sendMessage(user.telegram_id, '⛔️ Ваш доступ до бота скасовано адміністратором.', {
-                reply_markup: { remove_keyboard: true }
-            });
-            notifStatus = 'та повідомлено користувача.';
-        } catch (e) {
-             console.error(`Failed to notify removed user ${cleanUsername}`, e);
-             notifStatus = `але виникла помилка при повідомленні: ${e.message}`;
-        }
-        
-        ctx.reply(`Користувач @${cleanUsername} успішно видалений, ${notifStatus}`);
-
+        let statusMsg = notifSuccess ? 'та повідомлено.' : 'але не вдалося надіслати повідомлення.';
+        ctx.reply(`Користувач @${cleanUsername} успішно видалений, ${statusMsg}`);
     } else {
-        ctx.reply(`Помилка: користувач @${cleanUsername} не знайдений або вже видалений.`);
+        // If not removed from Active Users (maybe wasn't active), but found in Seen Users.
+        // Check if he was active?
+        // Since we checked getUserByUsername early, we know if he was active or not.
+        // Actually, let's stick to simple logic: we removed him.
+        ctx.reply(`Користувача @${cleanUsername} видалено (або його вже не було в списку активних).`);
     }
 }
 
