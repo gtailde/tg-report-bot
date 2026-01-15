@@ -66,9 +66,9 @@ function getRemindersKeyboard(settings) {
 }
 
 function getMainMenuKeyboard(isUserAdmin) {
-    let buttons = [['📝 Здати звіт']];
+    let buttons = [['📝 Здати звіт'], ['❓ Допомога']];
     if (isUserAdmin) {
-        buttons = [['📝 Здати звіт'], ['👥 Користувачі', '📊 Статус'], ['⚙️ Налаштування']];
+        buttons = [['📝 Здати звіт', '❓ Допомога'], ['👥 Користувачі', '📊 Статус'], ['⚙️ Налаштування']];
     }
     return Markup.keyboard(buttons).resize();
 }
@@ -298,7 +298,7 @@ module.exports = (bot) => {
         else ctx.reply(`Користувач ${username} не знайдений.`);
     });
 
-    bot.command('help', async (ctx) => {
+    async function helpHandler(ctx) {
         let helpText = `📚 **Доступні команди:**\n\n`;
         
         // Common commands
@@ -320,9 +320,14 @@ module.exports = (bot) => {
             helpText += `/setreminder [1-4] [cron] - Налаштування часу (краще через меню)\n`;
             helpText += `\n💡 *Порада:* Більшість функцій доступна через кнопки меню "Налаштування" та "Користувачі".`;
         }
+        
+        // Mention the manual
+        helpText += `\n📖 **Повна інструкція доступна тут:**\n[USER_MANUAL.md](https://github.com/gtailde/tg-report-bot/blob/main/USER_MANUAL.md)`; 
 
-        ctx.reply(helpText, { parse_mode: 'Markdown' });
-    });
+        ctx.reply(helpText, { parse_mode: 'Markdown', disable_web_page_preview: true });
+    }
+
+    bot.command('help', helpHandler);
 
     // --- MENU HANDLERS ---
     async function manageUsersHandler(ctx) {
@@ -602,7 +607,8 @@ module.exports = (bot) => {
         getManageAdminsKeyboard,
         getRemindersKeyboard,
         promptReminderMenu,
-        promptReminderTime,
+        promptReminderTim,
+        helpHandlere,
         promptReminderDay,
         updateReminderTime,
         updateReminderDay,

@@ -51,7 +51,8 @@ const {
     updateReminderTime,
     updateReminderDay,
     sendBroadcastLogic,
-    scheduleBroadcast
+    scheduleBroadcast,
+    helpHandler
 } = adminCommands(bot);
 const { getAllSettings } = require('./db/settings');
 
@@ -315,6 +316,8 @@ bot.on(['text', 'document', 'photo'], async (ctx, next) => {
 
 
     // 2. BUTTON HANDLERS
+    if (text === '❓ Допомога') return helpHandler(ctx);
+
     if (text === '📝 Здати звіт') {
         userStates[userId] = 'WAITING_FOR_REPORT';
         return ctx.reply('Будь ласка, надішли посилання на звіт (Google Docs, Jira, etc.)', Markup.keyboard([['🚫 Скасувати']]).resize());
@@ -379,9 +382,9 @@ bot.on(['text', 'document', 'photo'], async (ctx, next) => {
         // Common Back
         if (text === '🔙 Назад') {
              // We don't know exactly where we came from, but usually Back goes to Main Menu from Settings or Users
-             // Let's reset to Main Menu
-            userStates[userId] = null;
-            let buttons = [['📝 Здати звіт']];
+             // Let's reset to Main Menu, ['❓ Допомога']];
+            if (isUserAdmin) {
+                 buttons = [['📝 Здати звіт', '❓ Допомога]];
             if (isUserAdmin) {
                  buttons = [['📝 Здати звіт'], ['👥 Користувачі', '📊 Статус'], ['⚙️ Налаштування']];
             }
