@@ -119,6 +119,36 @@ async function addAdminLogic(ctx, username) {
     }
 }
 
+async function removeUserLogic(ctx, username) {
+    const cleanUsername = username.replace('@', '');
+    
+    // Check if trying to remove self
+    if (cleanUsername === ctx.from.username) {
+         return ctx.reply('⚠️ Ти не можеш видалити сам себе.');
+    }
+    
+    // Resolve ID to be sure
+    const user = await getSeenUserByUsername(cleanUsername);
+    if (user && user.telegram_id.toString() === ctx.from.id.toString()) {
+         return ctx.reply('⚠️ Ти не можеш видалити сам себе.');
+    }
+
+    const removed = await removeUser(cleanUsername);
+    
+    if (removed) {
+        ctx.reply(`Користувач @${cleanUsername} успішно видалений.`);
+        if (user) {
+             try {
+                await ctx.telegram.sendMessage(user.telegram_id, '⛔️ Твій доступ до бота було скасовано адміністратором.', Markup.removeKeyboard());
+             } catch (e) {
+                 console.warn(`Failed to notify removed user ${cleanUsername}`, e.message);
+             }
+        }
+    } else {
+        ctx.reply(`Користувач @${cleanUsername} не знайдений у списку.`);
+    }
+}
+
 async function removeAdminLogic(ctx, username) {
     const cleanUsername = username.replace('@', '');
     const user = await getSeenUserByUsername(cleanUsername);
@@ -526,6 +556,7 @@ module.exports = (bot) => {
         addUserLogic,
         addAdminLogic,
         removeAdminLogic,
+        removeUserLogic,
         removeUserLogic,
         listAdminsHandler,
         getManageUsersKeyboard,
