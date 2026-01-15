@@ -23,7 +23,8 @@ async function getDB() {
             telegram_id TEXT UNIQUE,
             username TEXT,
             full_name TEXT,
-            is_admin INTEGER DEFAULT 0
+            is_admin INTEGER DEFAULT 0,
+            reminders_enabled INTEGER DEFAULT 1
         );
 
         CREATE TABLE IF NOT EXISTS seen_users (
@@ -48,6 +49,12 @@ async function getDB() {
     `);
     
     // Migration for existing databases
+    try {
+        await dbInstance.exec("ALTER TABLE users ADD COLUMN reminders_enabled INTEGER DEFAULT 1;");
+    } catch (e) {
+        // Ignore if column already exists
+    }
+
     try {
         await dbInstance.exec("ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0;");
     } catch (e) {

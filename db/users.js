@@ -59,4 +59,11 @@ async function setAdminStatus(telegram_id, isAdmin) {
     await db.run('UPDATE users SET is_admin = ? WHERE telegram_id = ?', [isAdmin ? 1 : 0, telegram_id]);
 }
 
-module.exports = { addUser, removeUser, getAllUsers, getUserByTelegramId, getUserByUsername, markSeen, getSeenUserByUsername, setAdminStatus };
+async function toggleReminders(username, status) {
+    const db = await getDB();
+    const cleanUsername = username.replace('@', '');
+    const result = await db.run('UPDATE users SET reminders_enabled = ? WHERE LOWER(username) = LOWER(?)', [status ? 1 : 0, cleanUsername]);
+    return result.changes > 0;
+}
+
+module.exports = { addUser, removeUser, getAllUsers, getUserByTelegramId, getUserByUsername, markSeen, getSeenUserByUsername, setAdminStatus, toggleReminders };

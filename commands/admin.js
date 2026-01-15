@@ -1,4 +1,4 @@
-﻿const { addUser, removeUser, getAllUsers, getSeenUserByUsername, getUserByUsername, setAdminStatus } = require('../db/users');
+﻿const { addUser, removeUser, getAllUsers, getSeenUserByUsername, getUserByUsername, setAdminStatus, toggleReminders } = require('../db/users');
 const cron = require('node-cron');
 const { getReportsForWeek, deleteReport } = require('../db/reports');
 const { isAdmin } = require('../utils/isAdmin');
@@ -127,27 +127,24 @@ async function removeUserLogic(ctx, username) {
          return ctx.reply('⚠️ Ти не можеш видалити сам себе.');
     }
     
-    // Resolve ID via seen_users to be more comprehensive, or users table
-    // Priority: Active Users -> Seen Users
-    let user = await getUserByUsername(cleanUsername);
-    if (!user) {
-        user = await getSeenUserByUsername(cleanUsername);
-    }
+    // Resolve ID (only from ACTIVE users)
+    const user = await getUserByUsername(cleanUsername);
     
     if (!user) {
-         return ctx.reply(`Користувач @${cleanUsername} не знайдений.`);
+         return ctx.reply(`Користувач @${cleanUsername} не знайдений у списку активних користувачів.`);
     }
+
+    // Removed the check that prevented deleting admins. 
+    // Now admins are deleted directly.
 
     if (user.telegram_id.toString() === ctx.from.id.toString()) {
          return ctx.reply('⚠️ Ти не можеш видалити сам себе.');
     }
 
-    // Try to notify BEFORE removing to ensure object validity if anything relies on it (though we have ID)
+    // Notify BEFORE removing
     let notifSuccess = false;
     try {
-        await ctx.telegram.sendMessage(user.telegram_id, '⛔️ Ваш доступ до бота скасовано адміністратором.', {
-            reply_markup: { remove_keyboard: true }
-        });
+        await ctx.telegram.sendMessage(user.telegram_id, '⛔️ Ваш доступ до бота скасовано адміністратором.', Markup.removeKeyboard());
         notifSuccess = true;
     } catch (e) {
          console.error(`Failed to notify user ${cleanUsername} before removal`, e);
@@ -159,11 +156,7 @@ async function removeUserLogic(ctx, username) {
         let statusMsg = notifSuccess ? 'та повідомлено.' : 'але не вдалося надіслати повідомлення.';
         ctx.reply(`Користувач @${cleanUsername} успішно видалений, ${statusMsg}`);
     } else {
-        // If not removed from Active Users (maybe wasn't active), but found in Seen Users.
-        // Check if he was active?
-        // Since we checked getUserByUsername early, we know if he was active or not.
-        // Actually, let's stick to simple logic: we removed him.
-        ctx.reply(`Користувача @${cleanUsername} видалено (або його вже не було в списку активних).`);
+        ctx.reply(`Помилка при видаленні користувача @${cleanUsername}.`);
     }
 }
 
@@ -186,27 +179,7 @@ async function removeAdminLogic(ctx, username) {
     }
 }
 
-async function removeUserLogic(ctx, username) {
-    const cleanUsername = username.replace('@', '');
-    // Check if trying to remove self
-    if (username === `@${ctx.from.username}` || cleanUsername === ctx.from.username) {
-         return ctx.reply('⚠️ Ти не можеш видалити сам себе.');
-    }
-    
-    // Better check via ID if possible, but removeUser works by username.
-    // Let's resolve ID just to be sure
-    const user = await getSeenUserByUsername(cleanUsername);
-    if (user && user.telegram_id.toString() === ctx.from.id.toString()) {
-         return ctx.reply('⚠️ Ти не можеш видалити сам себе.');
-    }
 
-    const removed = await removeUser(username);
-    if (removed) {
-        ctx.reply(`Користувач @${cleanUsername} видалений.`);
-    } else {
-        ctx.reply(`Користувач @${cleanUsername} не знайдений.`);
-    }
-}
 
 async function listUsersHandler(ctx) {
     if (!await isAdmin(ctx)) return;
@@ -241,12 +214,13 @@ async function statusHandler(ctx) {
         const report = reports.find(r => r.user_id === user.id);
         // Clean name to avoid markdown issues if needed, or just use as is
         const nameDisplay = `${user.full_name} (@${user.username})`;
+        const muteStatus = (user.reminders_enabled === 0) ? ' 🔕' : '';
         
         if (report) {
              const date = getFormattedDate(report.submitted_at);
-             return `✅ ${nameDisplay} — ${date}`;
+             return `✅ ${nameDisplay}${muteStatus} — ${date}`;
         } else {
-            return `❌ ${nameDisplay}`;
+            return `❌ ${nameDisplay}${muteStatus}`;
         }
     }).join('\n');
 
@@ -300,6 +274,54 @@ module.exports = (bot) => {
         const args = ctx.message.text.split(' ');
         if (args.length < 2) return ctx.reply('Usage: /remove @username');
         await removeUserLogic(ctx, args[1]);
+    });
+
+    bot.command('mute', async (ctx) => {
+        if (!await isAdmin(ctx)) return;
+        const args = ctx.message.text.split(' ');
+        if (args.length < 2) return ctx.reply('Usage: /mute @username');
+        
+        const username = args[1];
+        const updated = await toggleReminders(username, false);
+        if (updated) ctx.reply(`🔕 Нагадування для ${username} вимкнено.`);
+        else ctx.reply(`Користувач ${username} не знайдений.`);
+    });
+
+    bot.command('unmute', async (ctx) => {
+        if (!await isAdmin(ctx)) return;
+        const args = ctx.message.text.split(' ');
+        if (args.length < 2) return ctx.reply('Usage: /unmute @username');
+        
+        const username = args[1];
+        const updated = await toggleReminders(username, true);
+        if (updated) ctx.reply(`🔔 Нагадування для ${username} увімкнено.`);
+        else ctx.reply(`Користувач ${username} не знайдений.`);
+    });
+
+    bot.command('help', async (ctx) => {
+        let helpText = `📚 **Доступні команди:**\n\n`;
+        
+        // Common commands
+        helpText += `📝 **Користувач:**\n`;
+        helpText += `/start - Запустити бота\n`;
+        helpText += `(Кнопка "📝 Здати звіт") - Відправити звіт текстом, фото або документом.\n\n`;
+
+        if (await isAdmin(ctx)) {
+            helpText += `👮‍♂️ **Адміністратор:**\n`;
+            helpText += `/add @username [Ім'я] - Додати користувача\n`;
+            helpText += `/remove @username - Видалити користувача (і адміна)\n`;
+            helpText += `/makeadmin @username - Зробити адміном\n`;
+            helpText += `/demoteadmin @username - Забрати права адміна\n`;
+            helpText += `/mute @username - Вимкнути нагадування звіту\n`;
+            helpText += `/unmute @username - Увімкнути нагадування звіту\n`;
+            helpText += `/resetreport @username - Скинути звіт користувача за поточний тиждень\n`;
+            helpText += `/status - Перевірити, хто здав звіти\n`;
+            helpText += `/list - Список всіх користувачів\n`;
+            helpText += `/setreminder [1-4] [cron] - Налаштування часу (краще через меню)\n`;
+            helpText += `\n💡 *Порада:* Більшість функцій доступна через кнопки меню "Налаштування" та "Користувачі".`;
+        }
+
+        ctx.reply(helpText, { parse_mode: 'Markdown' });
     });
 
     // --- MENU HANDLERS ---
@@ -574,7 +596,6 @@ module.exports = (bot) => {
         addUserLogic,
         addAdminLogic,
         removeAdminLogic,
-        removeUserLogic,
         removeUserLogic,
         listAdminsHandler,
         getManageUsersKeyboard,

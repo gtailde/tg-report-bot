@@ -88,6 +88,9 @@ async function remindMissing(bot, message) {
     const reports = await getReportsForWeek(week, year);
 
     for (const user of users) {
+        // Skip if reminders are disabled
+        if (user.reminders_enabled === 0) continue;
+
         const hasReport = reports.some(r => r.user_id === user.id);
         if (!hasReport) {
              try {
