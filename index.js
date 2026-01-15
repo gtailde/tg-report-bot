@@ -424,7 +424,7 @@ bot.on(['text', 'document', 'photo'], async (ctx, next) => {
              // We don't know exactly where we came from, but usually Back goes to Main Menu from Settings or Users
              // Let's reset to Main Menu
             userStates[userId] = null;
-            let buttons = [['📝 Здати звіт'], ['❓ Допомога']];
+            let buttons = [['📝 Здати звіт']];
             if (isUserAdmin) {
                  buttons = [['📝 Здати звіт', '❓ Допомога'], ['👥 Користувачі', '📊 Статус'], ['⚙️ Налаштування']];
             }

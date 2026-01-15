@@ -66,7 +66,7 @@ function getRemindersKeyboard(settings) {
 }
 
 function getMainMenuKeyboard(isUserAdmin) {
-    let buttons = [['📝 Здати звіт'], ['❓ Допомога']];
+    let buttons = [['📝 Здати звіт']];
     if (isUserAdmin) {
         buttons = [['📝 Здати звіт', '❓ Допомога'], ['👥 Користувачі', '📊 Статус'], ['⚙️ Налаштування']];
     }
