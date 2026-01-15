@@ -60,10 +60,14 @@ const { handleReportSubmission } = userCommands(bot);
 // /start command
 bot.start(async (ctx) => {
     let user = await getUserByTelegramId(ctx.from.id.toString());
-    const isUserAdmin = await isAdmin(ctx);
+    // Optimization: avoid double DB call
+    const { ADMIN_ID } = require('./config');
+    const isSuperAdmin = ctx.from.id.toString() === ADMIN_ID;
+    const isDbAdmin = user ? (user.is_admin === 1) : false;
+    const isUserAdmin = isSuperAdmin || isDbAdmin;
     
     // Ensure Super Admin is synced to DB
-    if (isUserAdmin && ctx.from.id.toString() === require('./config').ADMIN_ID) {
+    if (isSuperAdmin) {
          if (!user) {
              await addUser(ctx.from.id.toString(), ctx.from.username || 'admin', ctx.from.first_name || 'Super Admin');
              await setAdminStatus(ctx.from.id.toString(), true);
@@ -92,10 +96,15 @@ bot.on(['text', 'document', 'photo'], async (ctx, next) => {
     const message = ctx.message;
     const text = message.text || message.caption || ''; // Grab text/caption
     const userId = ctx.from.id.toString();
-    const isUserAdmin = await isAdmin(ctx);
 
-    // Check if user is active (in users table)
+    // OPTIMIZATION: Combine user fetch and admin check to reduce DB calls
     const user = await getUserByTelegramId(userId);
+    
+    // Check admin status manually to avoid extra DB call via isAdmin checks
+    const { ADMIN_ID } = require('./config');
+    const isSuperAdmin = userId === ADMIN_ID;
+    const isDbAdmin = user ? (user.is_admin === 1) : false;
+    const isUserAdmin = isSuperAdmin || isDbAdmin;
     
     // Only allow Admins or Active Users to proceed with interactive commands/buttons
     // Exception: /start is handled separately, but text messages like "Back" or buttons need validation

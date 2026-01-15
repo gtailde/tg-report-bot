@@ -11,6 +11,12 @@ async function getDB() {
         driver: sqlite3.Database
     });
 
+    // Performance optimizations
+    await dbInstance.exec('PRAGMA journal_mode = WAL;');
+    await dbInstance.exec('PRAGMA synchronous = NORMAL;');
+    await dbInstance.exec('PRAGMA temp_store = MEMORY;');
+    await dbInstance.exec('PRAGMA cache_size = -2000;'); // ~2MB cache
+
     await dbInstance.exec(`
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
